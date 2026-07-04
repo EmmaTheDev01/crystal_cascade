@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, width=device-width, height=device-height, user-scalable=0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" type="text/css" href="splash.css" />
+  <title>Crystal Cascade</title>
+</head>
+
+<body class="app">
+  <!-- Background grid/glow effects -->
+  <div class="bg-glow"></div>
+
+  <div class="splash-card">
+    <div class="logo-container">
+      <img class="snoo" src="/snoo.png" alt="Snoo Mascot" />
+    </div>
+
+    <div class="content">
+      <h2 class="welcome-label" id="title">Welcome</h2>
+      <h1 class="glow-title">CRYSTAL CASCADE</h1>
+      <p class="description">
+        Align precious gems, trigger chain reactions, and smash blocks in a premium 3D puzzle challenge!
+      </p>
+    </div>
+
+    <div class="action-container">
+      <button class="start-button" id="start-button">
+        Play Game
+      </button>
+    </div>
+
+    <footer class="footer">
+      <div class="docs-link" tabindex="0" id="docs-link">Docs</div>
+      <span class="divider">|</span>
+      <div class="docs-link" tabindex="0" id="playtest-link">r/Devvit</div>
+      <span class="divider">|</span>
+      <div class="docs-link" tabindex="0" id="discord-link">Discord</div>
+    </footer>
+  </div>
+
+  <script type="module" src="splash.ts" defer></script>
+</body>
+
+</html>

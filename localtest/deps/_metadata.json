@@ -1,0 +1,44 @@
+{
+  "hash": "59b45a15",
+  "configHash": "86162659",
+  "lockfileHash": "e3b0c442",
+  "browserHash": "411fbe10",
+  "optimized": {
+    "@devvit/web/client": {
+      "src": "../../crystal-cascade/node_modules/@devvit/web/client/index.js",
+      "file": "@devvit_web_client.js",
+      "fileHash": "89838db9",
+      "needsInterop": false
+    },
+    "react-dom/client": {
+      "src": "../../crystal-cascade/node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "1b6bf831",
+      "needsInterop": true
+    },
+    "react": {
+      "src": "../../crystal-cascade/node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "58814e2e",
+      "needsInterop": true
+    },
+    "react/jsx-dev-runtime": {
+      "src": "../../crystal-cascade/node_modules/react/jsx-dev-runtime.js",
+      "file": "react_jsx-dev-runtime.js",
+      "fileHash": "193bf1e8",
+      "needsInterop": true
+    },
+    "three": {
+      "src": "../../crystal-cascade/node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "e823ab6c",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "rolldown-runtime-DEy6nfl2": {
+      "file": "rolldown-runtime-DEy6nfl2.js",
+      "isDynamicEntry": false
+    }
+  }
+}
