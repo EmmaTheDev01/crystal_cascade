@@ -2,21 +2,23 @@
 
 > *How a 3D match-three puzzle game found its home inside Reddit.*
 
----
-
 ## Inspiration
 
-The spark came from a simple frustration: Reddit is where millions of people go to share ideas, debate topics, and build communities around the things they love — including games. Yet when you visit a gaming subreddit, the most interactive thing you can do is upvote a screenshot or leave a comment.
+There were two threads that came together to make Crystal Cascade happen.
+
+The first was a personal one. As a software engineer, I spend most of my day thinking in abstractions — system design, data flows, debugging logic. But coding is a slow, deliberate kind of thinking. I wanted something that trained a different side of my brain: **faster decision-making, sharper pattern recognition, and quicker reactions under pressure**. I started playing games like Candy Crush Saga during breaks — not casually, but intentionally, using them as a daily exercise to sharpen the kind of split-second spatial reasoning and critical thinking that makes you a better engineer over time. Match-three games turned out to be surprisingly effective at this. The constant need to scan the board, anticipate chain reactions three moves ahead, and act quickly before the window closes is a genuine cognitive workout.
+
+That experience gave me deep respect for what great match-three design actually achieves. It's not just entertainment — it's a focused mental training loop disguised as play.
+
+The second thread was a frustration with Reddit. Reddit is where millions of people go to share ideas, debate topics, and build communities around the things they love — including games. Yet when you visit a gaming subreddit, the most interactive thing you can do is upvote a screenshot or leave a comment.
 
 I kept asking: *what if the post itself was the game?*
 
-Match-three puzzle games have always fascinated me because they sit at an elegant intersection of accessibility and depth. The rules are immediately understood by anyone — align three gems, watch them disappear — but the underlying strategy around chain reactions, combo multipliers, and special power-up interactions creates a surprisingly rich decision space. Games like Candy Crush proved this at scale, but they exist in their own ecosystem, isolated from community.
+Match-three games sit at an elegant intersection of accessibility and depth. The rules are immediately understood by anyone — align three gems, watch them disappear — but the underlying strategy around chain reactions, combo multipliers, and special power-up interactions creates a surprisingly rich decision space.
 
 The launch of Reddit's **Devvit platform** changed the equation. Suddenly, it was possible to embed a fully interactive experience directly inside a Reddit post — the same post your friends are commenting on, the same feed you scroll every morning. That proximity to community felt like a design constraint worth building around, not escaping from.
 
-The name *Crystal Cascade* captures the feeling I was chasing: the satisfying visual and audio cascade of chain reactions, the sense that each move could set off something much larger than itself.
-
----
+The name *Crystal Cascade* captures the feeling I was chasing: the satisfying visual and audio cascade of chain reactions, the sense that each move could set off something much larger than itself — and the same feeling of mental clarity that comes from locking in on a pattern and executing it fast.
 
 ## What it does
 
@@ -38,8 +40,6 @@ When two specials are swapped together, they combine into escalating super-combo
 The game ships with **5 hand-tuned levels** of increasing difficulty, followed by an **infinite procedural mode** where levels are generated on the fly. An **AI Auto-Play mode** demonstrates optimal play patterns and provides an accessibility path for players who want to watch rather than play.
 
 All sound is synthesised live using the **Web Audio API** — no audio files, no bandwidth cost, just pure procedurally generated feedback tuned to match game events.
-
----
 
 ## How we built it
 
@@ -96,8 +96,6 @@ $$
 P(\text{win}) = \frac{\text{simulated wins}}{N_{\text{trials}}} > 0 \quad \forall \text{ levels}
 $$
 
----
-
 ## Challenges we ran into
 
 ### 1. The dead-board problem
@@ -130,8 +128,6 @@ const item: ToastItem = icon !== undefined
 
 Reddit embeds the webview at whatever dimensions the native app decides — which varies wildly between a Reddit desktop sidebar, a mobile app full-screen, and a tablet split view. Getting the HUD, 3D canvas, and objectives footer to coexist across all these sizes required three distinct CSS breakpoints: `≤ 720px` (grid HUD), `≤ 400px` (compact phones), and `max-height: 500px` landscape (flat row HUD with hidden secondary elements).
 
----
-
 ## Accomplishments that we're proud of
 
 - **Zero audio files.** Every sound in the game — match tones, cascade chimes, combo escalation — is synthesised in real-time from pure Web Audio API oscillators. The pentatonic scale ensures it always sounds pleasant regardless of how fast the player triggers sounds.
@@ -142,8 +138,6 @@ Reddit embeds the webview at whatever dimensions the native app decides — whic
 
 - **A premium visual experience in a Reddit post.** The glassmorphism HUD cards, gradient title typography, and smooth 60fps gem animations look as polished as a native mobile app — inside a Reddit post.
 
----
-
 ## What we learned
 
 **WebGL in a webview is fast, but you have to manage the context manually.** Three.js's `WebGLRenderer` doesn't know about React's lifecycle, so every time `playEvent` triggered a board reset we had to explicitly dispose all geometries, materials, and the renderer itself before re-creating them. Memory leaks from un-disposed Three.js resources were invisible at first but caused the game to slow down after several level restarts.
@@ -153,8 +147,6 @@ Reddit embeds the webview at whatever dimensions the native app decides — whic
 **Match-three game design is harder than it looks.** The rules of match-three are simple, but designing levels that feel fair, satisfying, and progressively challenging without a level editor or playtest team requires a surprising amount of mathematical reasoning about board state probabilities, expected gem distributions, and combo likelihood under different move constraints.
 
 **Emoji are not portable.** What renders as a glowing diamond on macOS is a grey box on certain Android versions and a different shape entirely on some Linux terminals. Replacing every emoji in the game UI with inline SVG icons was a net improvement in every measurable way — consistency, size, accessibility, and style control.
-
----
 
 ## What's next for Crystal Cascade
 
@@ -171,12 +163,8 @@ Reddit embeds the webview at whatever dimensions the native app decides — whic
 - **Cooperative mode** — two Reddit users play the same board simultaneously, each seeing the other's cursor position, racing to clear blocks together
 - **Community-created levels** — a level editor embedded in a Devvit moderator panel, letting subreddit mods publish custom Crystal Cascade levels for their community
 
----
-
 > *Every cascade starts with a single swap. So does every great project.*
 
----
-
-**Repository:** [EmmaTheDev01/crystal_cascade](https://github.com/EmmaTheDev01/crystal_cascade)  
-**Platform:** Reddit Devvit  
+**Repository:** [EmmaTheDev01/crystal_cascade](https://github.com/EmmaTheDev01/crystal_cascade)
+**Platform:** Reddit Devvit
 **Stack:** React 18 · Three.js · TypeScript · Web Audio API · Hono · Vanilla CSS
