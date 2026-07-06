@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type React from 'react';
 
 // ── Game State ────────────────────────────────────────────────────────────────
 
@@ -144,7 +145,7 @@ export interface GameEngineProps {
   onLevelWin: () => void;
   onLevelLose: () => void;
   playEvent: number;
-  showToast: (text: string) => void;
+  showToast: (text: string, icon?: 'star' | 'sparkle' | 'zap' | 'flame' | 'volume-x' | 'volume-2' | 'refresh' | 'shield') => void;
 }
 
 export interface HUDProps {

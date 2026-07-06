@@ -1,5 +1,40 @@
-/* Jewel Cascade Main Application Styling */
+/* ── CSS Variables ───────────────────────────────────────────────────────── */
+:root {
+  --bg-deep: #0a0715;
+  --bg-panel: #17112c;
+  --amethyst: #7a4fd1;
+  --gold: #f4b942;
+  --ruby: #e6395f;
+  --sapphire: #3f8cd6;
+  --emerald: #3fae6a;
+  --rose: #f27ab0;
+  --ink: #f3eefc;
+  --ink-dim: #b6a9db;
+}
 
+/* ── Reset ───────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, #1e153a 0%, #0d091e 65%, var(--bg-deep) 100%);
+  font-family: 'Nunito', sans-serif;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Root layout ─────────────────────────────────────────────────────────── */
 #root {
   position: relative;
   display: flex;
@@ -8,10 +43,9 @@
   justify-content: space-between;
   width: 100vw;
   height: 100svh;
-  overflow: hidden;
 }
 
-/* ---------------- VIGNETTE EFFECT ---------------- */
+/* ── Vignette ────────────────────────────────────────────────────────────── */
 .vignette {
   position: absolute;
   inset: 0;
@@ -20,7 +54,7 @@
   background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0) 35%, rgba(6, 4, 14, 0.65) 100%);
 }
 
-/* ---------------- HUD CONTAINER ---------------- */
+/* ── HUD ─────────────────────────────────────────────────────────────────── */
 .hud {
   position: absolute;
   top: 0;
@@ -38,7 +72,7 @@
   pointer-events: auto;
 }
 
-/* ---------------- STAT CARDS ---------------- */
+/* ── Stat Cards ──────────────────────────────────────────────────────────── */
 .stat-card {
   background: rgba(23, 17, 44, 0.72);
   border: 1px solid rgba(122, 79, 209, 0.45);
@@ -82,32 +116,8 @@
   text-shadow: 0 0 12px rgba(244, 185, 66, 0.4);
 }
 
-.stat-sub-label {
-  font-size: 10px;
-  color: var(--ink-dim);
-  opacity: 0.8;
-  margin-top: 2px;
-}
-
-.score-val {
-  color: #fff;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-.moves-val.low {
-  color: var(--ruby);
-  text-shadow: 0 0 12px rgba(230, 57, 95, 0.65);
-  animation: movesPulse 1s infinite alternate;
-}
-
-@keyframes movesPulse {
-  from {
-    transform: scale(1);
-  }
-
-  to {
-    transform: scale(1.1);
-  }
+.small-val {
+  font-size: 18px;
 }
 
 .stats-group {
@@ -115,7 +125,23 @@
   gap: 12px;
 }
 
-/* ---------------- TITLE DISPLAY ---------------- */
+.moves-val.low {
+  color: var(--ruby);
+  text-shadow: 0 0 12px rgba(230, 57, 95, 0.65);
+}
+
+/* AI toggle */
+.toggle-card.active {
+  border-color: var(--emerald);
+  background: rgba(63, 174, 106, 0.2);
+}
+
+.toggle-card.active .stat-value {
+  color: var(--emerald);
+  text-shadow: 0 0 10px rgba(63, 174, 106, 0.6);
+}
+
+/* ── Title Banner ────────────────────────────────────────────────────────── */
 .title-wrap {
   text-align: center;
   display: flex;
@@ -135,7 +161,6 @@
   background-clip: text;
   color: transparent;
   letter-spacing: 1.5px;
-  text-shadow: 0 0 20px rgba(122, 79, 209, 0.25);
 }
 
 .title-wrap .level-label {
@@ -149,42 +174,36 @@
 
 .action-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   margin-top: 4px;
 }
 
-.mini-btn {
+.icon-btn {
   cursor: pointer;
-  font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-  background: rgba(23, 17, 44, 0.5);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
   border: 1px solid rgba(122, 79, 209, 0.35);
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 8px;
+  background: rgba(23, 17, 44, 0.5);
+  color: var(--ink-dim);
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.mini-btn:hover {
+.icon-btn:hover {
   color: var(--ink);
   background: rgba(122, 79, 209, 0.28);
   border-color: rgba(122, 79, 209, 0.6);
 }
 
-/* AI status color toggling */
-.toggle-card.active {
-  border-color: var(--emerald);
-  background: rgba(63, 174, 106, 0.2);
+.icon-btn:active {
+  transform: scale(0.92);
 }
 
-.toggle-card.active .stat-value {
-  color: var(--emerald);
-  text-shadow: 0 0 10px rgba(63, 174, 106, 0.6);
-}
-
-/* ---------------- OBJECTIVES FOOTER PANEL ---------------- */
+/* ── Objectives Footer ───────────────────────────────────────────────────── */
 .objectives-panel {
   position: absolute;
   bottom: 24px;
@@ -253,7 +272,7 @@
   transition: width 0.4s cubic-bezier(0.1, 0.8, 0.2, 1.0);
 }
 
-/* ---------------- FULLSCREEN MODAL OVERLAYS ---------------- */
+/* ── Overlay Modals ──────────────────────────────────────────────────────── */
 .overlay {
   position: absolute;
   inset: 0;
@@ -310,12 +329,10 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 20px rgba(85, 239, 196, 0.2);
 }
 
 .overlay-card.lose h2 {
   color: var(--ruby);
-  text-shadow: 0 0 20px rgba(230, 57, 95, 0.25);
 }
 
 .glow-title {
@@ -324,7 +341,6 @@
   background-clip: text;
   color: transparent;
   font-weight: 800;
-  text-shadow: 0 0 30px rgba(122, 79, 209, 0.3);
 }
 
 .overlay-card p {
@@ -334,7 +350,7 @@
   margin-bottom: 24px;
 }
 
-/* ---------------- OBJECTIVES PREVIEW IN START SHEET ---------------- */
+/* Preview chips */
 .objectives-preview {
   display: flex;
   gap: 12px;
@@ -366,7 +382,7 @@
   color: #fff;
 }
 
-/* ---------------- HELP TEXT ONBOARDING ---------------- */
+/* Help text */
 .help-text {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 14px;
@@ -395,7 +411,7 @@
   margin-bottom: 4px;
 }
 
-/* ---------------- SCORE SUMMARIES ---------------- */
+/* Score summary */
 .score-summary {
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(122, 79, 209, 0.25);
@@ -427,7 +443,7 @@
   text-shadow: 0 0 10px rgba(244, 185, 66, 0.35);
 }
 
-/* ---------------- BUTTONS ---------------- */
+/* Big button */
 .big-btn {
   font-family: 'Baloo 2', sans-serif;
   font-weight: 700;
@@ -451,7 +467,7 @@
   transform: translateY(0) scale(0.97);
 }
 
-/* ---------------- TOAST ALERTS CONTAINER ---------------- */
+/* ── Toast Alerts ────────────────────────────────────────────────────────── */
 .toast-container {
   position: absolute;
   top: 96px;
@@ -503,12 +519,22 @@
   }
 }
 
+/* ── Three.js Canvas Container ───────────────────────────────────────────── */
+.heavy-component {
+  touch-action: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+.heavy-component canvas {
+  display: block;
+  touch-action: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
   .hud {
     display: grid;
-    grid-template-areas:
-      "title title"
-      "ai stats";
+    grid-template-areas: "title title" "ai stats";
     grid-template-columns: auto auto;
     justify-content: center;
     align-items: center;
@@ -545,7 +571,6 @@
 
   .title-wrap h1 {
     font-size: 19px;
-    letter-spacing: 1px;
   }
 
   .title-wrap .level-label {

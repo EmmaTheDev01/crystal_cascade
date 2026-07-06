@@ -1,5 +1,6 @@
 import React from 'react';
 import type { HUDProps } from '../types';
+import Icon from './Icon';
 
 export default function HUD({
   levelIndex,
@@ -31,18 +32,20 @@ export default function HUD({
 
         {/* Main Title Banner */}
         <div className="title-wrap">
-          <h1>CRYSTAL CASCADE</h1>
-          <div className="level-label">
+          <div className="title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
+            <h1 style={{ margin: 0 }}>CRYSTAL CASCADE</h1>
+          </div>
+          <div className="level-label" style={{ marginTop: '4px' }}>
             {levelIndex < maxLevels
               ? `Level ${levelIndex + 1} of ${maxLevels}`
               : `Level ${levelIndex + 1} (Infinite Mode)`}
           </div>
           <div className="action-row">
-            <button className="mini-btn restart-btn" onClick={restartLevel}>
-              Restart level ⟳
+            <button className="icon-btn" onClick={restartLevel} aria-label="Restart level">
+              <Icon name="refresh" size={15} />
             </button>
-            <button className="mini-btn mute-btn" onClick={toggleMute}>
-              {muted ? 'Unmute 🔇' : 'Mute 🔊'}
+            <button className="icon-btn" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>
+              <Icon name={muted ? 'volume-x' : 'volume-2'} size={15} />
             </button>
           </div>
         </div>
@@ -64,12 +67,13 @@ export default function HUD({
           className={`obj-chip block-chip ${isDone ? 'done' : ''}`}
           style={{ minWidth: '220px', padding: '10px 16px' }}
         >
-          <div
-            className="obj-swatch"
+          <Icon
+            name="box"
+            size={22}
             style={{
-              backgroundColor: '#a24fd1',
-              borderRadius: '4px',
-              boxShadow: '0 0 10px 2px #a24fd1',
+              color: '#a24fd1',
+              filter: 'drop-shadow(0 0 6px #a24fd1)',
+              flexShrink: 0,
             }}
           />
           <div className="obj-info">

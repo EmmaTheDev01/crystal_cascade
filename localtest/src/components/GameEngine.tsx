@@ -22,7 +22,7 @@ import type {
 
 const BOARD_SIZE    = 8;
 const TILE_SPACING  = 1.05;
-const DRAG_THRESHOLD = 20;
+const DRAG_THRESHOLD = 3;
 
 const SWAP_MS          = 200;
 const CLEAR_MS         = 200;
@@ -43,7 +43,7 @@ export default function GameEngine({
   levelConfig,
   gameState,
   aiMode,
-  muted,       // eslint-disable-line @typescript-eslint/no-unused-vars
+  muted: _muted,
   movesLeft,
   setMovesLeft,
   collectedCount,
@@ -499,15 +499,31 @@ export default function GameEngine({
       duration: number,
       opts: { toScale?: THREE.Vector3; onComplete?: () => void } = {},
     ): void {
+      const state = stateRef.current;
+      const existingIdx = state.tweens.findIndex(tw => tw.mesh === mesh);
+
+      const fromPos = mesh.position.clone();
+      const fromScale = mesh.scale.clone();
+      let toScale = opts.toScale ? opts.toScale.clone() : mesh.scale.clone();
+
+      if (existingIdx !== -1) {
+        const existing = state.tweens[existingIdx];
+        // Preserve target scale if it was scaling up during spawn
+        if (!opts.toScale && existing.toScale) {
+          toScale = existing.toScale.clone();
+        }
+        state.tweens.splice(existingIdx, 1);
+      }
+
       const tween: Tween = {
         mesh, duration, elapsed: 0,
-        fromPos:   mesh.position.clone(),
+        fromPos,
         toPos:     targetPos.clone(),
-        fromScale: mesh.scale.clone(),
-        toScale:   opts.toScale ? opts.toScale.clone() : mesh.scale.clone(),
+        fromScale,
+        toScale,
         onComplete: opts.onComplete ?? null,
       };
-      stateRef.current.tweens.push(tween);
+      state.tweens.push(tween);
     }
 
     function easeOutQuad(t: number): number { return 1 - (1 - t) * (1 - t); }
@@ -516,8 +532,10 @@ export default function GameEngine({
       const state = stateRef.current;
 
       if (state.tweens.length > 0) {
-        const remaining: Tween[] = [];
-        for (const tw of state.tweens) {
+        const currentTweens = [...state.tweens];
+        const completed: Tween[] = [];
+
+        for (const tw of currentTweens) {
           tw.elapsed += delta * 1000;
           const t  = Math.min(tw.elapsed / tw.duration, 1);
           const et = easeOutQuad(t);
@@ -525,10 +543,23 @@ export default function GameEngine({
             tw.mesh.position.lerpVectors(tw.fromPos, tw.toPos, et);
             tw.mesh.scale.lerpVectors(tw.fromScale, tw.toScale, et);
           }
-          if (t >= 1) { if (tw.onComplete) tw.onComplete(); }
-          else remaining.push(tw);
+          if (t >= 1) {
+            completed.push(tw);
+          }
         }
-        state.tweens = remaining;
+
+        // Safe remove completed tweens before firing callbacks to prevent overwrite of newly added tweens
+        state.tweens = state.tweens.filter(tw => !completed.includes(tw));
+
+        for (const tw of completed) {
+          if (tw.onComplete) {
+            try {
+              tw.onComplete();
+            } catch (_) {
+              /* ignore */
+            }
+          }
+        }
       }
 
       if (state.particles.length > 0) {
@@ -635,9 +666,7 @@ export default function GameEngine({
       // L/T intersections → wrapped gem
       const ltIntersections = new Map<string, { r: number; c: number; color: number }>();
       rowMatches.forEach(rm => {
-        if (rm.len >= 5) return; // 5-in-a-row → color_bomb, not wrapped
         colMatches.forEach(cm => {
-          if (cm.len >= 5) return;
           if (rm.color !== cm.color) return;
           const sharedKey = rm.keys.find(k => cm.keys.includes(k));
           if (sharedKey && !ltIntersections.has(sharedKey)) {
@@ -654,7 +683,7 @@ export default function GameEngine({
       ltIntersections.forEach((info, key) => {
         specialsToSpawn.push({ r: info.r, c: info.c, colorType: info.color, specialType: 'wrapped' });
         spawnSlots.add(key);
-        showToast('🔶 WRAPPED GEM!');
+        showToast('WRAPPED GEM!', 'shield');
       });
 
       function pickSpawnInRun(isRow: boolean, lineIdx: number, runStart: number, runEnd: number): number {
@@ -679,7 +708,7 @@ export default function GameEngine({
         const sType: SpecialType = rm.len >= 5 ? 'color_bomb' : 'striped_h';
         specialsToSpawn.push({ r: rm.r!, c: spawnC, colorType: rm.color, specialType: sType });
         spawnSlots.add(key);
-        showToast(sType === 'color_bomb' ? '✨ RAINBOW CRYSTAL!' : '⚡ STRIPED CRYSTAL!');
+        showToast(sType === 'color_bomb' ? 'RAINBOW CRYSTAL!' : 'STRIPED CRYSTAL!', sType === 'color_bomb' ? 'star' : 'zap');
       });
 
       colMatches.forEach(cm => {
@@ -690,10 +719,10 @@ export default function GameEngine({
         const sType: SpecialType = cm.len >= 5 ? 'color_bomb' : 'striped_v';
         specialsToSpawn.push({ r: spawnR, c: cm.c!, colorType: cm.color, specialType: sType });
         spawnSlots.add(key);
-        showToast(sType === 'color_bomb' ? '✨ RAINBOW CRYSTAL!' : '⚡ STRIPED CRYSTAL!');
+        showToast(sType === 'color_bomb' ? 'RAINBOW CRYSTAL!' : 'STRIPED CRYSTAL!', sType === 'color_bomb' ? 'star' : 'zap');
       });
 
-      if (squareBlastKeys.size > 0) showToast('💥 SQUARE BLAST!');
+      if (squareBlastKeys.size > 0) showToast('SQUARE BLAST!', 'flame');
 
       return { matched, specialsToSpawn };
     }
@@ -765,27 +794,27 @@ export default function GameEngine({
             expanded = true;
             const sType = cell.special;
             if (sType === 'wrapped') {
-              showToast('🔶 WRAPPED BLAST!');
+              showToast('WRAPPED BLAST!', 'shield');
               for (let dr = -1; dr <= 1; dr++)
                 for (let dc = -1; dc <= 1; dc++) {
                   const nr = r + dr, nc = c + dc;
                   if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) matched.add(`${nr},${nc}`);
                 }
             } else if (sType === 'striped_h') {
-              showToast('ROW BLAST!');
+              showToast('ROW BLAST!', 'zap');
               for (let col = 0; col < BOARD_SIZE; col++) matched.add(`${r},${col}`);
             } else if (sType === 'striped_v') {
-              showToast('COLUMN BLAST!');
+              showToast('COLUMN BLAST!', 'zap');
               for (let row = 0; row < BOARD_SIZE; row++) matched.add(`${row},${c}`);
             } else if (sType === 'bomb') {
-              showToast('COSMIC BLAST!');
+              showToast('COSMIC BLAST!', 'sparkle');
               for (let dr = -1; dr <= 1; dr++)
                 for (let dc = -1; dc <= 1; dc++) {
                   const nr = r + dr, nc = c + dc;
                   if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) matched.add(`${nr},${nc}`);
                 }
             } else if (sType === 'color_bomb') {
-              showToast('HYPERNOVA BLAST!');
+              showToast('HYPERNOVA BLAST!', 'star');
               const targetColor = cell.type;
               for (let row = 0; row < BOARD_SIZE; row++)
                 for (let col = 0; col < BOARD_SIZE; col++)
@@ -799,7 +828,7 @@ export default function GameEngine({
       state.lastSwapB = null;
 
       gameAudio.playMatch(comboMultiplier);
-      if (comboMultiplier > 1) showToast(`x${comboMultiplier} COMBO!`);
+      if (comboMultiplier > 1) showToast(`x${comboMultiplier} COMBO!`, 'flame');
 
       const newCollected = { ...state.collectedCount };
       matched.forEach(key => {
@@ -966,7 +995,7 @@ export default function GameEngine({
     function triggerShuffle(): void {
       const state = stateRef.current;
       state.busy = true;
-      showToast('NO MOVES! SHUFFLING...');
+      showToast('NO MOVES! SHUFFLING...', 'refresh');
 
       const cellsToShuffle: GemCell[] = [];
       for (let r = 0; r < BOARD_SIZE; r++)
@@ -1188,6 +1217,9 @@ export default function GameEngine({
 
     // ── Input handling ───────────────────────────────────────────────────────
 
+    const boardPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    const planeIntersect = new THREE.Vector3();
+
     function getTileFromEvent(evt: PointerEvent | TouchEvent): BoardPosition | null {
       const rect    = renderer.domElement.getBoundingClientRect();
       const clientX = (evt as PointerEvent).clientX ?? ((evt as TouchEvent).touches?.[0]?.clientX);
@@ -1198,19 +1230,40 @@ export default function GameEngine({
       mouse.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
 
+      // Primary: project onto board plane and snap to grid cell.
+      // This covers the entire cell area, making touch much more reliable
+      // than trying to hit the small gem mesh directly.
+      const didHit = raycaster.ray.intersectPlane(boardPlane, planeIntersect);
+      if (didHit) {
+        const localX = planeIntersect.x + boardWorldSize / 2;
+        const localZ = planeIntersect.z + boardWorldSize / 2;
+        const col = Math.round(localX / TILE_SPACING);
+        const row = Math.round(localZ / TILE_SPACING);
+
+        if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE
+            && stateRef.current.board[row]?.[col]) {
+          return { row, col };
+        }
+      }
+
+      // Fallback: raycast against gem meshes directly
       const meshes: THREE.Mesh[] = [];
       for (let r = 0; r < BOARD_SIZE; r++)
         for (let c = 0; c < BOARD_SIZE; c++)
           if (stateRef.current.board[r]?.[c]) meshes.push(stateRef.current.board[r][c]!.mesh);
 
       const hits = raycaster.intersectObjects(meshes);
-      if (hits.length === 0) return null;
-      const { row, col } = hits[0].object.userData as { row: number; col: number };
-      return { row, col };
+      if (hits.length > 0) {
+        const { row, col } = hits[0].object.userData as { row: number; col: number };
+        return { row, col };
+      }
+
+      return null;
     }
 
     function attemptSwap(a: BoardPosition, b: BoardPosition): void {
       const state = stateRef.current;
+      if (state.busy) return;
       state.busy = true;
       state.lastSwapA = a;
       state.lastSwapB = b;
@@ -1261,44 +1314,45 @@ export default function GameEngine({
         }
 
         if (isASpecial || isBSpecial) {
-          setMovesLeft(prev => prev - 1);
+          state.movesLeft--;
+          setMovesLeft(state.movesLeft);
           const matched = new Set<string>();
           matched.add(`${a.row},${a.col}`);
           matched.add(`${b.row},${b.col}`);
 
           if (isAWrapped && isBWrapped) {
-            showToast('💥 DOUBLE AREA BLAST!'); blastArea(a.row, a.col, matched); blastArea(b.row, b.col, matched);
+            showToast('DOUBLE AREA BLAST!', 'shield'); blastArea(a.row, a.col, matched); blastArea(b.row, b.col, matched);
           } else if (isAStriped && isBStriped) {
-            showToast('✚ CROSS BLAST!');
+            showToast('CROSS BLAST!', 'zap');
             [a.row, b.row].forEach(r => { for (let cc = 0; cc < BOARD_SIZE; cc++) matched.add(`${r},${cc}`); });
             [a.col, b.col].forEach(c => { for (let rr = 0; rr < BOARD_SIZE; rr++) matched.add(`${rr},${c}`); });
           } else if (isAColorBomb && isBColorBomb) {
-            showToast('🌟 SUPERNOVA! BOARD CLEARED!');
+            showToast('SUPERNOVA! BOARD CLEARED!', 'star');
             for (let r = 0; r < BOARD_SIZE; r++) for (let c = 0; c < BOARD_SIZE; c++) matched.add(`${r},${c}`);
           } else if (isAWrapped && isBStriped) {
-            showToast('💥⚡ AREA + LINE!'); blastArea(a.row, a.col, matched); blastLine(cellB, b.row, b.col, matched);
+            showToast('AREA + LINE!', 'flame'); blastArea(a.row, a.col, matched); blastLine(cellB, b.row, b.col, matched);
           } else if (isBWrapped && isAStriped) {
-            showToast('💥⚡ AREA + LINE!'); blastArea(b.row, b.col, matched); blastLine(cellA, a.row, a.col, matched);
+            showToast('AREA + LINE!', 'flame'); blastArea(b.row, b.col, matched); blastLine(cellA, a.row, a.col, matched);
           } else if (isAWrapped && isBColorBomb) {
-            showToast('💥✨ AREA + COLOR CLEAR!'); blastArea(a.row, a.col, matched); blastColor(cellA.type, matched);
+            showToast('AREA + COLOR CLEAR!', 'sparkle'); blastArea(a.row, a.col, matched); blastColor(cellA.type, matched);
           } else if (isBWrapped && isAColorBomb) {
-            showToast('💥✨ AREA + COLOR CLEAR!'); blastArea(b.row, b.col, matched); blastColor(cellB.type, matched);
+            showToast('AREA + COLOR CLEAR!', 'sparkle'); blastArea(b.row, b.col, matched); blastColor(cellB.type, matched);
           } else if (isAStriped && isBColorBomb) {
-            showToast('⚡✨ LINE + COLOR CLEAR!'); blastLine(cellA, a.row, a.col, matched); blastColor(cellB.type, matched);
+            showToast('LINE + COLOR CLEAR!', 'zap'); blastLine(cellA, a.row, a.col, matched); blastColor(cellB.type, matched);
           } else if (isBStriped && isAColorBomb) {
-            showToast('⚡✨ LINE + COLOR CLEAR!'); blastLine(cellB, b.row, b.col, matched); blastColor(cellA.type, matched);
+            showToast('LINE + COLOR CLEAR!', 'zap'); blastLine(cellB, b.row, b.col, matched); blastColor(cellA.type, matched);
           } else if (isAColorBomb) {
-            showToast('✨ HYPERNOVA BLAST!'); blastColor(cellB.type, matched);
+            showToast('HYPERNOVA BLAST!', 'star'); blastColor(cellB.type, matched);
           } else if (isBColorBomb) {
-            showToast('✨ HYPERNOVA BLAST!'); blastColor(cellA.type, matched);
+            showToast('HYPERNOVA BLAST!', 'star'); blastColor(cellA.type, matched);
           } else if (isAStriped) {
-            showToast(cellA.special === 'striped_h' ? '⚡ ROW BLAST!' : '⚡ COLUMN BLAST!'); blastLine(cellA, a.row, a.col, matched);
+            showToast(cellA.special === 'striped_h' ? 'ROW BLAST!' : 'COLUMN BLAST!', 'zap'); blastLine(cellA, a.row, a.col, matched);
           } else if (isBStriped) {
-            showToast(cellB.special === 'striped_h' ? '⚡ ROW BLAST!' : '⚡ COLUMN BLAST!'); blastLine(cellB, b.row, b.col, matched);
+            showToast(cellB.special === 'striped_h' ? 'ROW BLAST!' : 'COLUMN BLAST!', 'zap'); blastLine(cellB, b.row, b.col, matched);
           } else if (isAWrapped) {
-            showToast('🔶 WRAPPED BLAST!'); blastArea(a.row, a.col, matched);
+            showToast('WRAPPED BLAST!', 'shield'); blastArea(a.row, a.col, matched);
           } else if (isBWrapped) {
-            showToast('🔶 WRAPPED BLAST!'); blastArea(b.row, b.col, matched);
+            showToast('WRAPPED BLAST!', 'shield'); blastArea(b.row, b.col, matched);
           }
 
           resolveMatches({ matched, specialsToSpawn: [] }, 1);
@@ -1307,7 +1361,8 @@ export default function GameEngine({
 
         const matchResult = findMatches();
         if (matchResult.matched.size > 0) {
-          setMovesLeft(prev => prev - 1);
+          state.movesLeft--;
+          setMovesLeft(state.movesLeft);
           resolveMatches(matchResult, 1);
         } else {
           let backDone = 0;
@@ -1374,12 +1429,108 @@ export default function GameEngine({
         mat.emissiveIntensity = isSelected ? 1.2 : 0.55;
     }
 
-    function onPointerDown(evt: PointerEvent): void {
+    // ── Touch state (separate from pointer drag for direct touch handling) ──
+    let touchDragRow = -1;
+    let touchDragCol = -1;
+    let touchHandled = false;
+
+    function onTouchStart(evt: TouchEvent): void {
+      evt.preventDefault();
       const state = stateRef.current;
       if (state.busy || state.gameOver || state.aiMode || state.gameState !== 'playing') return;
+      const touch = evt.touches[0];
+      if (!touch) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((touch.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse.y = -((touch.clientY - rect.top)  / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      // Use board plane projection for reliable cell detection
+      const didHit = raycaster.ray.intersectPlane(boardPlane, planeIntersect);
+      if (didHit) {
+        const localX = planeIntersect.x + boardWorldSize / 2;
+        const localZ = planeIntersect.z + boardWorldSize / 2;
+        const col = Math.round(localX / TILE_SPACING);
+        const row = Math.round(localZ / TILE_SPACING);
+
+        if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE
+            && state.board[row]?.[col]) {
+          touchDragRow = row;
+          touchDragCol = col;
+          touchHandled = false;
+          clearHintVisual();
+          return;
+        }
+      }
+      touchDragRow = -1;
+      touchHandled = false;
+    }
+
+    function onTouchMove(evt: TouchEvent): void {
+      evt.preventDefault();
+      const state = stateRef.current;
+      if (state.busy || state.gameOver || state.aiMode || state.gameState !== 'playing') return;
+      if (touchHandled) return;
+      const touch = evt.touches[0];
+      if (!touch) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((touch.clientX - rect.left) / rect.width)  * 2 - 1;
+      mouse.y = -((touch.clientY - rect.top)  / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+
+      const didHit = raycaster.ray.intersectPlane(boardPlane, planeIntersect);
+      if (!didHit) return;
+
+      const localX = planeIntersect.x + boardWorldSize / 2;
+      const localZ = planeIntersect.z + boardWorldSize / 2;
+      const col = Math.round(localX / TILE_SPACING);
+      const row = Math.round(localZ / TILE_SPACING);
+
+      if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE) return;
+      if (!state.board[row]?.[col]) return;
+
+      if (touchDragRow === -1) {
+        // Pick up starting tile dynamically on slide
+        touchDragRow = row;
+        touchDragCol = col;
+        touchHandled = false;
+        clearHintVisual();
+      } else {
+        const dr = row - touchDragRow;
+        const dc = col - touchDragCol;
+        const dist = Math.abs(dr) + Math.abs(dc);
+
+        if (dist === 1) {
+          // Slide gesture matched adjacent cell! Swap immediately
+          touchHandled = true;
+          if (state.selected) { setSelectedVisual(state.selected.row, state.selected.col, false); state.selected = null; }
+          const startTile = { row: touchDragRow, col: touchDragCol };
+          touchDragRow = -1; // reset drag
+          attemptSwap(startTile, { row, col });
+        }
+      }
+    }
+
+    function onTouchEnd(evt: TouchEvent): void {
+      evt.preventDefault();
+      const state = stateRef.current;
+      if (touchDragRow >= 0 && !touchHandled && !state.busy && !state.gameOver && !state.aiMode)
+        handleTileClick(touchDragRow, touchDragCol);
+      touchDragRow = -1;
+      touchHandled = false;
+    }
+
+    // ── Pointer handlers (desktop mouse fallback) ────────────────────────────
+
+    function onPointerDown(evt: PointerEvent): void {
+      if (evt.pointerType === 'touch') return; // handled by touch events
+      const state = stateRef.current;
+      if (state.busy || state.gameOver || state.aiMode || state.gameState !== 'playing') return;
+      evt.preventDefault();
       const tile = getTileFromEvent(evt);
       if (!tile) return;
-      evt.preventDefault();
       try { renderer.domElement.setPointerCapture(evt.pointerId); } catch (_) { /* ignore */ }
       state.dragState = {
         row: tile.row, col: tile.col,
@@ -1390,6 +1541,7 @@ export default function GameEngine({
     }
 
     function onPointerMove(evt: PointerEvent): void {
+      if (evt.pointerType === 'touch') return;
       const state = stateRef.current;
       if (!state.dragState || state.dragState.pointerId !== evt.pointerId || state.dragState.handled) return;
       if (state.busy || state.gameOver || state.aiMode || state.gameState !== 'playing') return;
@@ -1414,6 +1566,7 @@ export default function GameEngine({
     }
 
     function onPointerUp(evt: PointerEvent): void {
+      if (evt.pointerType === 'touch') return;
       const state = stateRef.current;
       if (!state.dragState || state.dragState.pointerId !== evt.pointerId) return;
       try { renderer.domElement.releasePointerCapture(evt.pointerId); } catch (_) { /* ignore */ }
@@ -1450,13 +1603,14 @@ export default function GameEngine({
             if (cell.special === 'color_bomb') {
               const hue = ((t * 0.00035) + phase * 0.15) % 1;
               rainbowMat.emissive.set(new THREE.Color().setHSL(hue, 1.0, 0.58));
-              rainbowMat.emissiveIntensity = 1.3 + 0.3 * Math.sin(t * 0.003 + phase);
+              rainbowMat.emissiveIntensity = 1.1 + 0.2 * Math.sin(t * 0.002 + phase);
             } else if (cell.special === 'wrapped') {
-              mat.emissiveIntensity = 0.7 + 0.55 * Math.abs(Math.sin(t * 0.0035 + phase));
+              mat.emissiveIntensity = 0.65 + 0.35 * Math.abs(Math.sin(t * 0.003 + phase));
             } else if (cell.special === 'striped_h' || cell.special === 'striped_v') {
-              mat.emissiveIntensity = 0.6 + 0.7 * Math.abs(Math.sin(t * 0.005 + phase));
+              mat.emissiveIntensity = 0.55 + 0.45 * Math.abs(Math.sin(t * 0.004 + phase));
             } else {
-              mat.emissiveIntensity = 0.35 + 0.3 * Math.sin(t * 0.002 + phase);
+              // Static — no pulsing animation
+              mat.emissiveIntensity = 0.45;
             }
           }
         }
@@ -1479,10 +1633,17 @@ export default function GameEngine({
 
     window.addEventListener('resize', handleResize);
     const canvas = renderer.domElement;
+    canvas.style.touchAction = 'none';
     canvas.addEventListener('pointerdown',  onPointerDown);
     canvas.addEventListener('pointermove',  onPointerMove);
     canvas.addEventListener('pointerup',    onPointerUp);
     canvas.addEventListener('pointercancel', onPointerUp as EventListener);
+
+    // Direct touch handlers for reliable mobile input in iframe
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
+    canvas.addEventListener('touchcancel', onTouchEnd,  { passive: false });
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -1521,6 +1682,10 @@ export default function GameEngine({
       canvas.removeEventListener('pointermove',   onPointerMove);
       canvas.removeEventListener('pointerup',     onPointerUp);
       canvas.removeEventListener('pointercancel', onPointerUp as EventListener);
+      canvas.removeEventListener('touchstart',  onTouchStart);
+      canvas.removeEventListener('touchmove',   onTouchMove);
+      canvas.removeEventListener('touchend',    onTouchEnd);
+      canvas.removeEventListener('touchcancel', onTouchEnd);
 
       clearBoardMeshes();
       baseGeo.dispose(); baseMat.dispose(); trimGeo.dispose(); trimMat.dispose();
@@ -1530,7 +1695,7 @@ export default function GameEngine({
       renderer.dispose();
       if (container.contains(canvas)) container.removeChild(canvas);
     };
-  }, [playEvent]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [playEvent]);
 
   // Trigger AI when mode changes
   useEffect(() => {

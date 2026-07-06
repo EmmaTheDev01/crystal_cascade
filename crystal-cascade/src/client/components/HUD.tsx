@@ -33,7 +33,6 @@ export default function HUD({
         {/* Main Title Banner */}
         <div className="title-wrap">
           <div className="title-row" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}>
-            <img src="/snoo.png" alt="Snoo" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
             <h1 style={{ margin: 0 }}>CRYSTAL CASCADE</h1>
           </div>
           <div className="level-label" style={{ marginTop: '4px' }}>
@@ -42,13 +41,11 @@ export default function HUD({
               : `Level ${levelIndex + 1} (Infinite Mode)`}
           </div>
           <div className="action-row">
-            <button className="mini-btn restart-btn" onClick={restartLevel} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Icon name="refresh" size={11} />
-              <span>Restart level</span>
+            <button className="icon-btn" onClick={restartLevel} aria-label="Restart level">
+              <Icon name="refresh" size={15} />
             </button>
-            <button className="mini-btn mute-btn" onClick={toggleMute} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              <Icon name={muted ? 'volume-x' : 'volume-2'} size={11} />
-              <span>{muted ? 'Unmute' : 'Mute'}</span>
+            <button className="icon-btn" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'}>
+              <Icon name={muted ? 'volume-x' : 'volume-2'} size={15} />
             </button>
           </div>
         </div>
@@ -70,14 +67,13 @@ export default function HUD({
           className={`obj-chip block-chip ${isDone ? 'done' : ''}`}
           style={{ minWidth: '220px', padding: '10px 16px' }}
         >
-          <img
-            src="/snoo.png"
-            alt="Snoo Block Objective"
+          <Icon
+            name="box"
+            size={22}
             style={{
-              width: '24px',
-              height: '24px',
-              objectFit: 'contain',
+              color: '#a24fd1',
               filter: 'drop-shadow(0 0 6px #a24fd1)',
+              flexShrink: 0,
             }}
           />
           <div className="obj-info">

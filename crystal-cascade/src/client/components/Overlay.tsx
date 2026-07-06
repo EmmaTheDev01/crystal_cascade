@@ -21,19 +21,9 @@ export default function Overlay({
 
           <div className="objectives-preview" style={{ justifyContent: 'center' }}>
             <div className="preview-chip" style={{ padding: '8px 16px' }}>
-              <img
-                src="/snoo.png"
-                alt="Snoo Goal"
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 0 6px #a24fd1)',
-                }}
-              />
               <span
                 className="preview-qty"
-                style={{ fontSize: '15px', marginLeft: '6px' }}
+                style={{ fontSize: '15px' }}
               >
                 Clear all {blockCount} Blocks!
               </span>
@@ -41,10 +31,11 @@ export default function Overlay({
           </div>
 
           <div className="help-text">
-            <h3>Rules:</h3>
+            <h3>How to Play:</h3>
             <ul>
-              <li>Swap adjacent gems to align matches of 3 or more.</li>
-              <li>Matches made on top of blocks damage/shatter them.</li>
+              <li>Slide a crystal in any direction to swap it with its neighbour.</li>
+              <li>Line up 3 or more matching crystals to clear them.</li>
+              <li>Matches on top of blocks damage and shatter them.</li>
               <li>Match 4 in a line to spawn a <strong>Striped Crystal</strong>!</li>
               <li>Match 5 in a line to spawn a <strong>Rainbow Crystal</strong>!</li>
               <li>Match an L or T shape to spawn a <strong>Wrapped Crystal</strong>!</li>

@@ -4,14 +4,20 @@ import HUD from './components/HUD';
 import Overlay from './components/Overlay';
 import { gameAudio } from './utils/audio';
 import type { LevelConfig, GameState } from './types';
-import './App.css';
+import Icon from './components/Icon';
+
+interface ToastItem {
+  id: number;
+  text: string;
+  icon?: 'star' | 'sparkle' | 'zap' | 'flame' | 'volume-x' | 'volume-2' | 'refresh' | 'shield';
+}
 
 const LEVELS: LevelConfig[] = [
   { moves: 22, colorsUsed: 4, blockCount: 8,  blockMaxDurability: 1 },
   { moves: 18, colorsUsed: 5, blockCount: 16, blockMaxDurability: 1 },
   { moves: 15, colorsUsed: 5, blockCount: 24, blockMaxDurability: 2 },
   { moves: 16, colorsUsed: 6, blockCount: 28, blockMaxDurability: 2 },  // was 14/30 — adjusted
-  { moves: 14, colorsUsed: 6, blockCount: 32, blockMaxDurability: 2 },  // was 12/36/dur3 — adjusted
+  { moves: 15, colorsUsed: 6, blockCount: 30, blockMaxDurability: 2 },
 ];
 
 function getLevelConfig(idx: number): LevelConfig {
@@ -31,7 +37,7 @@ export default function App(): React.ReactElement {
   const [collectedCount, setCollectedCount] = useState<Record<string, number>>({ blocks: 0 });
   const [aiMode, setAiMode]               = useState<boolean>(false);
   const [muted, setMuted]                 = useState<boolean>(false);
-  const [toasts, setToasts]               = useState<Array<{ id: number; text: string }>>([]);
+  const [toasts, setToasts]               = useState<ToastItem[]>([]);
   const [playEvent, setPlayEvent]         = useState<number>(0);
 
   const currentLevel = getLevelConfig(levelIndex);
@@ -39,11 +45,14 @@ export default function App(): React.ReactElement {
   useEffect(() => {
     setMovesLeft(currentLevel.moves);
     setCollectedCount({ blocks: 0 });
-  }, [levelIndex, playEvent]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [levelIndex, playEvent]);
 
-  const showToast = (text: string): void => {
-    const id = Date.now() + Math.random();
-    setToasts(prev => [...prev, { id, text }]);
+  const showToast = (text: string, icon?: ToastItem['icon']): void => {
+    const id   = Date.now() + Math.random();
+    const item: ToastItem = icon !== undefined
+      ? { id, text, icon }
+      : { id, text };
+    setToasts(prev => [...prev, item]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 850);
@@ -89,7 +98,10 @@ export default function App(): React.ReactElement {
       {/* Toast alerts */}
       <div className="toast-container">
         {toasts.map(t => (
-          <div key={t.id} className="toast-alert">{t.text}</div>
+          <div key={t.id} className="toast-alert" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {t.icon && <Icon name={t.icon} size={16} />}
+            <span>{t.text}</span>
+          </div>
         ))}
       </div>
 
